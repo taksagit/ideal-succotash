@@ -1,11 +1,11 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 import sqlite3
 
 app = Flask(__name__)
 
-# Инициализация БД
-def init_db():
-    conn = sqlite3.connect("game.db")
+# Функция для обновления очков
+def update_score(telegram_id, username):
+    conn = sqlite3.connect("/tmp/game.db")  # Используем временную БД
     cursor = conn.cursor()
     cursor.execute(
         """CREATE TABLE IF NOT EXISTS users (
@@ -15,14 +15,6 @@ def init_db():
         )"""
     )
     conn.commit()
-    conn.close()
-
-init_db()
-
-# Функция обновления очков
-def update_score(telegram_id, username):
-    conn = sqlite3.connect("game.db")
-    cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM users WHERE telegram_id=?", (telegram_id,))
     user = cursor.fetchone()
@@ -35,20 +27,8 @@ def update_score(telegram_id, username):
     conn.commit()
     conn.close()
 
-# Получение таблицы лидеров
-def get_leaderboard():
-    conn = sqlite3.connect("game.db")
-    cursor = conn.cursor()
-    cursor.execute("SELECT username, score FROM users ORDER BY score DESC LIMIT 10")
-    top_players = cursor.fetchall()
-    conn.close()
-    return [{"username": row[0], "score": row[1]} for row in top_players]
-
-@app.route("/")
-def index():
-    return render_template("index.html")
-
-@app.route("/click", methods=["POST"])
+# Обработчик нажатия
+@app.route("/api/click", methods=["POST"])
 def click():
     data = request.json
     telegram_id = data.get("telegram_id")
@@ -59,9 +39,16 @@ def click():
         return jsonify({"status": "success"})
     return jsonify({"status": "error"}), 400
 
-@app.route("/leaderboard", methods=["GET"])
+# Таблица лидеров
+@app.route("/api/leaderboard", methods=["GET"])
 def leaderboard():
-    return jsonify(get_leaderboard())
+    conn = sqlite3.connect("/tmp/game.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, score FROM users ORDER BY score DESC LIMIT 10")
+    top_players = cursor.fetchall()
+    conn.close()
+    return jsonify([{"username": row[0], "score": row[1]} for row in top_players])
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+# Vercel handler
+def handler(event, context):
+    return app(event, context)
