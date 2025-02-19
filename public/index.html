@@ -13,13 +13,18 @@
     </style>
 </head>
 <body>
-    <h1>Нажимай на персонажа!</h1>
+    <h1>Нажимай на Аркаврика!</h1>
     <img id="character" src="hero.png" alt="Character">
     <p>Очки: <span id="score">0</span></p>
 
     <h2>Таблица лидеров</h2>
     <div id="leaderboard"></div>
-
+    <div id = "shop">
+        <h2>Магазин</h2>
+        <div class = "hide">
+            
+        </div>
+    </div>
     <script>
         let tg = window.Telegram.WebApp;
         let user = tg.initDataUnsafe.user;
