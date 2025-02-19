@@ -52,3 +52,14 @@ def leaderboard():
 # Vercel handler
 def handler(event, context):
     return app(event, context)
+
+@app.route("/api/leaderboard", methods=["GET"])
+def leaderboard():
+    conn = sqlite3.connect("/tmp/game.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, score FROM users ORDER BY score DESC LIMIT 10")
+    top_players = cursor.fetchall()
+    conn.close()
+    
+    print("Leaderboard Data:", top_players)  # Лог в консоль
+    return jsonify([{"username": row[0], "score": row[1]} for row in top_players])
